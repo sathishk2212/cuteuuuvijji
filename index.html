@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Name Sticker Maker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%80%3C/text%3E%3C/svg%3E">
+<link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--ink:#6b4b5a;--cream:#fff7fa;--pink:#ffc5d6;--mint:#f3d9e5;--sky:#f6dce8;--butter:#ffe8ee;--lav:#f2e4f1;
+--bg:var(--cream);--card:#fffafb;--soft:#fff1f5;--pv:#fff0f5;--mut:#9a7786}
+@media (prefers-color-scheme:dark){:root{--ink:#f6e9ff;--bg:#2b2238;--card:#3a2f4a;--soft:#46395a;--pv:#e8e0fa;--mut:#c9b6dc}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Fredoka,system-ui,sans-serif;color:var(--ink);background:var(--bg) radial-gradient(circle,rgba(245,143,168,.20) 1.5px,transparent 2px) 0 0/26px 26px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:18px 16px 8px}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{border:2px solid var(--ink);background:var(--pink);border-radius:999px;padding:10px 18px;font-weight:600;cursor:pointer;box-shadow:0 3px 0 #d9a5b7;transition:transform .08s,box-shadow .08s;color:#6b4b5a}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.dot:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #8b5cd6;outline-offset:2px}
+.mint{background:var(--mint)}.sky{background:var(--sky)}.butter{background:var(--butter)}
+.home{text-align:center;padding-top:4vh}
+.logo{font-size:clamp(46px,13vw,92px);font-weight:700;line-height:1.02;margin:6px 0 10px;filter:drop-shadow(0 3px 0 rgba(107,75,90,.16))}
+.logo span{display:inline-block;-webkit-text-stroke:.10em #fff4f7;paint-order:stroke fill;stroke-linejoin:round}
+.sub{margin:0 auto 26px;color:var(--mut);font-size:18px}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:620px;margin:0 auto}
+.pick button{padding:22px 16px;border-radius:30px;border:2px solid var(--ink);box-shadow:0 4px 0 #d9a5b7;cursor:pointer;font-size:24px;font-weight:700;display:flex;flex-direction:column;gap:4px;align-items:center;color:#6b4b5a;transition:transform .08s,box-shadow .08s}
+.pick button small{font-size:15px;font-weight:400}
+.pick button:hover{transform:translateY(-2px)}
+.pick button:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.bar h2{margin:0;font-size:28px;flex:1;min-width:160px}
+.box{background:var(--card);border:2px solid var(--ink);border-radius:26px;padding:16px;box-shadow:0 3px 0 #d9a5b7;margin-bottom:18px}
+textarea,input[type=text]{width:100%;border:2px solid var(--ink);border-radius:18px;padding:12px 14px;background:var(--soft);font-size:16px}
+textarea{min-height:104px;resize:vertical}
+.hint{font-size:13px;color:var(--mut);margin:7px 4px 0;line-height:1.45}
+.hint b{color:var(--ink);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.chip{border:2px solid var(--ink);background:var(--card);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500}
+.chip[aria-pressed=true]{background:var(--butter);color:#6b4b5a;font-weight:700}
+.panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 18px;align-items:end}
+.panel label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:500}
+.panel output{float:right;color:var(--mut)}
+.panel select{border:2px solid var(--ink);border-radius:14px;padding:7px 10px;background:var(--soft)}
+.panel input[type=range]{accent-color:#e98eaa;width:100%}
+.panel .tg{flex-direction:row;align-items:center;gap:10px}
+.panel .tg input{width:22px;height:22px;accent-color:#e98eaa}
+.panel .tg small{color:var(--mut);font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:26px;padding:12px;box-shadow:0 3px 0 #d9a5b7;display:flex;flex-direction:column;gap:10px}
+.card h3{margin:0;font-size:17px;text-align:center;overflow-wrap:anywhere}
+.pv{background:var(--pv);border-radius:18px;min-height:130px;display:flex;align-items:center;justify-content:center;padding:14px;color:#7d6a8c;font-size:14px}
+.pv canvas{max-width:100%;max-height:150px;width:auto;height:auto}
+.one .pv canvas{max-height:260px}
+.sw{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0}
+.dot[aria-pressed=true]{box-shadow:0 0 0 2px var(--card),0 0 0 4px #e99ab3}
+.card .row{justify-content:center}
+.card .btn{padding:7px 14px;font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(60px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#6b4b5a;color:#fff7fa;padding:9px 18px;border-radius:999px;font-size:15px;z-index:9}
+footer{text-align:center;padding:18px 16px 22px;font-size:15px;font-weight:500;color:var(--mut)}
+footer .kiss{display:inline-block;color:transparent;-webkit-text-fill-color:transparent;-webkit-text-stroke:1.15px var(--ink);text-shadow:none;font-family:Arial,"Noto Sans Symbols 2",sans-serif;font-size:17px;line-height:1}
+@media(max-width:520px){.bar h2{font-size:24px}.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+</style>
+</head>
+<body>
+<main>
+<section id="home" class="home">
+<svg width="84" height="76" viewBox="0 0 84 76" aria-hidden="true"><ellipse cx="42" cy="40" rx="36" ry="32" fill="#ffe7a3" stroke="#4b3a5a" stroke-width="2.5"/><circle cx="29" cy="38" r="4" fill="#4b3a5a"/><circle cx="55" cy="38" r="4" fill="#4b3a5a"/><ellipse cx="21" cy="48" rx="6" ry="4" fill="#ffa6c1"/><ellipse cx="63" cy="48" rx="6" ry="4" fill="#ffa6c1"/><path d="M36 47q6 7 12 0" fill="none" stroke="#4b3a5a" stroke-width="2.5" stroke-linecap="round"/><path d="M30 10q12-10 24 0" fill="none" stroke="#e94f7a" stroke-width="3.5" stroke-linecap="round"/></svg>
+<h1 class="logo" id="logo" aria-label="Name Sticker Maker"></h1>
+<p class="sub">♡ cute little name stickers for the whole class ♡</p>
+<div class="pick">
+<button class="pink" style="background:var(--pink)" data-go="single">🎀 Single name<small>one sticker</small></button>
+<button style="background:var(--mint)" data-go="batch">🌸 Batch<small>many names at once</small></button>
+</div>
+</section>
+
+<section id="single" hidden>
+<div class="bar"><button class="btn butter" data-go="home">Home</button><h2>Single name</h2></div>
+<div class="box">
+<input type="text" id="sname" placeholder="aadhya" maxlength="30" autocomplete="off" aria-label="Name">
+<p class="hint">Type one name, e.g. <b>aadhya</b>. Pick girl or boy for matching colours, or Any.</p>
+<div class="chips" id="gchips"><button class="chip" data-g="g" aria-pressed="false">🎀 Girl</button><button class="chip" data-g="b" aria-pressed="false">💙 Boy</button><button class="chip" data-g="a" aria-pressed="true">✨ Any</button></div>
+<div class="row" style="margin-top:10px"><button class="btn" id="sgo">Make sticker</button></div>
+</div>
+<div id="slot-single"></div>
+<div class="grid one" id="sgrid" style="grid-template-columns:minmax(0,420px);justify-content:center"></div>
+</section>
+
+<section id="batch" hidden>
+<div class="bar"><button class="btn butter" data-go="home">Home</button><h2>Batch</h2><button class="btn mint" id="dall" disabled>Download all</button></div>
+<div class="box">
+<textarea id="bnames" placeholder="aadhya, sreehan, kabir:b, meera:g" aria-label="Names"></textarea>
+<p class="hint">Separate names with commas or new lines, e.g. <b>aadhya, sreehan</b>. Add <b>:g</b> or <b>:b</b> for a girl or boy palette, e.g. <b>aadhya:g, kabir:b</b>. Untagged names cycle through all 7 palettes.</p>
+<div class="row" style="margin-top:10px"><button class="btn" id="bgo">Make stickers</button><span class="hint" id="bcount" style="margin:0"></span></div>
+</div>
+<div id="slot-batch"></div>
+<div class="grid" id="bgrid"></div>
+</section>
+</main>
+<footer>for my cutuuuu vijji <span class="kiss">😙︎</span></footer>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const P=[["Sakura","#F58FA8","#F9B6C7","#FFF4F7"],["Strawberry","#F06F8F","#F7A8BA","#FFF0F4"],["Peach","#FF9B86","#FFC0B2","#FFF4F0"],["Lavender","#B59BEA","#D0BDF2","#F7F2FF"],["Matcha","#9BCB9A","#BFE1B9","#F3FAF0"],["Cream","#E8B86D","#F2D39B","#FFF9EC"],["Sky","#8FC7E8","#B8DDF0","#F2FAFF"]];
+const POOL={g:[1,2,4,5],b:[3,0,6,5],a:[0,1,2,3,4,5,6]};
+const cfg={upper:false,mode:'alt',size:200,rot:6,space:-1,stroke:6,smooth:0};
+const tiltPattern=[-0.82,0.58,-0.68,0.78,-0.52,0.64,-0.74,0.48];
+const $=s=>document.querySelector(s);
+const fontReady=new Promise(res=>{const l=$('#gf');const go=()=>document.fonts.load('700 100px Fredoka','abcXYZ').then(res,res);l.sheet?go():l.addEventListener('load',go);l.addEventListener('error',res);setTimeout(res,7000)});
+const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const hash=s=>{let h=7;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0};
+const mx=document.createElement('canvas').getContext('2d');
+
+async function render(c){
+ await fontReady;
+ const txt=cfg.upper?c.name.toUpperCase():c.name.toLowerCase(),size=cfg.size;
+ try{await document.fonts.load('700 '+size+'px Fredoka',txt)}catch(e){}
+ const rng=mulberry(c.seed),pal=P[c.pal];
+ const sw=size*cfg.stroke/100,bl=cfg.smooth*size/200,pad=Math.ceil(sw+bl*3+size*.1);
+ const font='700 '+size+'px Fredoka, sans-serif';
+ mx.font=font;
+ const L=[];let cx=pad,k=0;const sp=size*cfg.space/100;
+ for(const ch of txt){const w=mx.measureText(ch).width;
+  if(ch!==' '){
+   const tilt=tiltPattern[k%tiltPattern.length]*cfg.rot;
+   L.push({ch,x:cx,w,r:tilt*Math.PI/180,dy:0,sc:1,k});
+   k++;
+  }
+  cx+=w+sp}
+ const W=Math.ceil(cx-sp+pad),H=Math.ceil(size*1.6+pad*2),base=pad+size*1.05;
+ let m=document.createElement('canvas');m.width=W;m.height=H;
+ let g=m.getContext('2d');
+ const put=(ctx,l,stroke)=>{ctx.save();ctx.translate(l.x+l.w/2,base-size*.3+l.dy);ctx.rotate(l.r);ctx.scale(l.sc,l.sc);ctx.textAlign='center';ctx.font=font;if(stroke)ctx.strokeText(l.ch,0,size*.3);ctx.fillText(l.ch,0,size*.3);ctx.restore()};
+ g.lineJoin='round';g.lineWidth=sw*2;g.fillStyle=g.strokeStyle='#000';
+ L.forEach(l=>put(g,l,true));
+ if(bl>.5&&'filter' in g){const t=document.createElement('canvas');t.width=W;t.height=H;const tg=t.getContext('2d');tg.filter='blur('+bl+'px)';tg.drawImage(m,0,0);m=t;g=tg}
+ const id=g.getImageData(0,0,W,H),d=id.data,O=new Uint8Array(W*H),st=[];
+ const push=i=>{if(!O[i]&&d[i*4+3]<128){O[i]=1;st.push(i)}};
+ for(let x=0;x<W;x++){push(x);push((H-1)*W+x)}
+ for(let y=0;y<H;y++){push(y*W);push(y*W+W-1)}
+ while(st.length){const i=st.pop(),x=i%W;if(x>0)push(i-1);if(x<W-1)push(i+1);if(i>=W)push(i-W);if(i<W*(H-1))push(i+W)}
+ const [r,gg,b]=rgb(pal[3]);let x0=W,y0=H,x1=0,y1=0;
+ for(let i=0;i<W*H;i++){const a=d[i*4+3];const na=(!O[i]&&a<128)?255:Math.max(0,Math.min(255,(a-110)*6));
+  d[i*4]=r;d[i*4+1]=gg;d[i*4+2]=b;d[i*4+3]=na;
+  if(na>8){const x=i%W,y=(i/W)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}
+ g.putImageData(id,0,0);
+ L.forEach(l=>{let alt=l.k%2===1;if(cfg.mode==='rev')alt=!alt;else if(cfg.mode==='main')alt=false;else if(cfg.mode==='rand')alt=rng()<.5;
+  g.fillStyle=alt?pal[2]:pal[1];put(g,l,false)});
+ const out=document.createElement('canvas');
+ if(x1<x0){out.width=out.height=1;return out}
+ out.width=x1-x0+3;out.height=y1-y0+3;
+ out.getContext('2d').drawImage(m,x0-1,y0-1,out.width,out.height,0,0,out.width,out.height);
+ return out}
+
+let ver=0,run=0,active='home';
+const lists={single:[],batch:[]};
+async function draw(c){c.ver=ver;const cv=await render(c);c.cv=cv;c.pv.replaceChildren(cv)}
+async function refreshAll(list){const my=++run;for(const c of list){if(my!==run)return;if(c.ver!==ver)await draw(c)}}
+
+function toast(t,ms=2200){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,ms)}
+async function save(filename,blob){
+ try{const d=window.claude&&await claude.use('downloads');if(d){await d.save({filename,data:blob});return}}catch(e){if(e&&e.code==='declined')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+const blobOf=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
+const safe=n=>n.replace(/[\\/:*?"<>|]+/g,'').trim()||'sticker';
+
+function mkCard(c){
+ const el=document.createElement('article');el.className='card';
+ el.innerHTML='<div class="pv">Drawing…</div><h3></h3><div class="sw"></div><div class="row"><button class="btn re">🎲 Reroll</button><button class="btn mint dl">Download</button></div>';
+ el.querySelector('h3').textContent=c.name;c.pv=el.querySelector('.pv');
+ const sw=el.querySelector('.sw');
+ const dots=P.map((p,i)=>{const b=document.createElement('button');b.className='dot';b.title=p[0];b.setAttribute('aria-label',p[0]+' palette');
+  b.style.background='linear-gradient(135deg,'+p[1]+' 50%,'+p[2]+' 50%)';
+  b.onclick=()=>{c.pal=i;mark();draw(c)};sw.append(b);return b});
+ const mark=()=>dots.forEach((b,i)=>b.setAttribute('aria-pressed',i===c.pal));mark();
+ el.querySelector('.re').onclick=()=>{c.seed=Math.random()*1e9|0;draw(c)};
+ el.querySelector('.dl').onclick=async()=>{if(!c.cv)return;await save(c.file,await blobOf(c.cv))};
+ c.el=el;return el}
+
+function parse(t){return t.split(/[,\n;]+/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*:\s*([gb])$/i);return m?{name:m[1].trim(),g:m[2].toLowerCase()}:{name:s,g:null}}).filter(o=>o.name)}
+
+async function build(kind,items,grid){
+ grid.replaceChildren();lists[kind]=[];
+ const used={},pc={g:0,b:0};let seq=0,prev=-1;
+ items.forEach((o,i)=>{
+  const pick=()=>o.g?POOL[o.g][pc[o.g]++%POOL[o.g].length]:seq++%7;
+  let p=kind==='single'?POOL[o.g||'a'][Math.random()*POOL[o.g||'a'].length|0]:pick();
+  if(kind==='batch'&&p===prev)p=pick();
+  prev=p;
+  const base=safe(o.name),n=used[base.toLowerCase()]=(used[base.toLowerCase()]||0)+1;
+  const c={name:o.name,pal:p,seed:hash(o.name)+i*131,file:base+(n>1?'-'+n:'')+'.png',ver:-1};
+  lists[kind].push(c);grid.append(mkCard(c))});
+ let n=0;const my=++run;
+ for(const c of lists[kind]){if(my!==run)return;await draw(c);n++;if(kind==='batch')$('#bcount').textContent=n+' of '+items.length+' ready'}
+ if(kind==='batch'){$('#dall').disabled=false}
+}
+
+$('#sgo').onclick=()=>{const v=$('#sname').value.trim();if(!v){toast('Type a name first');$('#sname').focus();return}
+ build('single',[{name:v,g:gender==='a'?null:gender}],$('#sgrid'))};
+$('#sname').addEventListener('keydown',e=>{if(e.key==='Enter')$('#sgo').click()});
+let gender='a';
+document.querySelectorAll('#gchips .chip').forEach(b=>b.onclick=()=>{gender=b.dataset.g;document.querySelectorAll('#gchips .chip').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+
+$('#bgo').onclick=()=>{let items=parse($('#bnames').value);if(!items.length){toast('Add at least one name');$('#bnames').focus();return}
+ if(items.length>200){items=items.slice(0,200);toast('Using the first 200 names',3000)}
+ $('#dall').disabled=true;$('#bcount').textContent='Drawing…';build('batch',items,$('#bgrid'))};
+
+$('#dall').onclick=async()=>{
+ if(!window.JSZip){toast('Zip tool did not load. Check your connection.',3500);return}
+ const list=lists.batch.filter(c=>c.cv);if(!list.length)return;
+ toast('Zipping '+list.length+' stickers…',6000);
+ const z=new JSZip();for(const c of list)z.file(c.file,await blobOf(c.cv));
+ const blob=await z.generateAsync({type:'blob'});
+ await save('name-stickers.zip',blob);toast('Zip ready')};
+
+/* style panel (one panel, moved to whichever page is open) */
+const panel=document.createElement('div');panel.className='box panel';
+panel.innerHTML='<label class="tg"><input type="checkbox" id="up"><span>Capital letters <small>(off = lowercase)</small></span></label>'
++'<label>Letter colours<select id="mode"><option value="alt">Alternate (main, then alt)</option><option value="rev">Alternate (alt first)</option><option value="main">All main colour</option><option value="rand">Random mix</option></select></label>';
+[['size','Sticker size',120,320,10,'px'],['rot','Tilt strength',0,10,1,'°'],['space','Letter spacing',-12,10,1,'%'],['stroke','Outline thickness',2,12,1,'%'],['smooth','Edge softness',0,2,1,'']].forEach(([k,t,mn,mxv,st,u])=>{
+ const l=document.createElement('label');l.innerHTML=t+'<span><output></output></span><input type="range" min="'+mn+'" max="'+mxv+'" step="'+st+'">';
+ const i=l.querySelector('input'),o=l.querySelector('output');i.value=cfg[k];o.textContent=cfg[k]+u;
+ i.oninput=()=>{cfg[k]=+i.value;o.textContent=i.value+u;changed()};panel.append(l)});
+let tmr;const changed=()=>{ver++;clearTimeout(tmr);tmr=setTimeout(()=>refreshAll(lists[active]||[]),220)};
+panel.querySelector('#up').onchange=e=>{cfg.upper=e.target.checked;changed()};
+panel.querySelector('#mode').onchange=e=>{cfg.mode=e.target.value;changed()};
+
+function show(id){
+ active=id;['home','single','batch'].forEach(s=>$('#'+s).hidden=s!==id);
+ if(id!=='home'){$('#slot-'+id).append(panel);refreshAll(lists[id])}
+ window.scrollTo(0,0)}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+
+/* sticker-style logo */
+(()=>{const r=mulberry(11),p=P[2],lg=$('#logo');let k=0;
+ for(const ch of 'Name Sticker Maker'.toLowerCase()){
+  if(ch===' '){lg.append(' ');continue}
+  const s=document.createElement('span');s.textContent=ch;s.style.color=k%2?p[2]:p[1];
+  s.style.transform='rotate('+((k%2?1:-1)*(1+r()*3.5)).toFixed(1)+'deg) translateY('+((r()*2-1)*4).toFixed(1)+'px)';
+  s.style.marginRight='-.03em';lg.append(s);k++}})();
+</script>
+</body>
+</html>
