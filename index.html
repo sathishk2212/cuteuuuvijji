@@ -177,19 +177,31 @@ function svgOf(c){
   }
   const ctx=c.cv.getContext('2d');
   const imageData=ctx.getImageData(0,0,c.cv.width,c.cv.height);
-  // Trace the already-rendered sticker, including its outline and alternating fills,
-  // into genuine SVG path geometry with a transparent background.
-  const svg=ImageTracer.imagedataToSVG(imageData,{
+  // ImageTracer does not reliably preserve alpha by itself. Give fully transparent
+  // pixels a reserved key colour, trace the visible artwork, then remove key-colour
+  // paths from the SVG so the exported background remains genuinely transparent.
+  const KEY=[255,0,255];
+  for(let i=0;i<imageData.data.length;i+=4){
+    if(imageData.data[i+3] < 96){
+      imageData.data[i]=KEY[0];
+      imageData.data[i+1]=KEY[1];
+      imageData.data[i+2]=KEY[2];
+      imageData.data[i+3]=255;
+    } else {
+      imageData.data[i+3]=255;
+    }
+  }
+  let svg=ImageTracer.imagedataToSVG(imageData,{
     ltres:1,
     qtres:1,
     pathomit:2,
     rightangleenhance:true,
     colorsampling:0,
-    numberofcolors:16,
+    numberofcolors:32,
     mincolorratio:0,
     colorquantcycles:3,
     scale:1,
-    simplifytolerance:0.35,
+    simplifytolerance:0.25,
     roundcoords:2,
     lcpr:0,
     qcpr:0,
@@ -201,6 +213,9 @@ function svgOf(c){
     linefilter:true,
     layering:0
   });
+  // Remove vector regions traced from transparent source pixels.
+  svg=svg.replace(/<path\b(?=[^>]*\bfill=["'](?:rgb\(255,0,255\)|#ff00ff|#f0f)["'])[^>]*\/>/gi,'');
+  svg=svg.replace(/<path\b(?=[^>]*\bfill=["']rgb\(255, 0, 255\)["'])[^>]*\/>/gi,'');
   return new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
 }
 const safe=n=>n.replace(/[\\\\/:*?\"<>|]+/g,'').trim()||'sticker';
