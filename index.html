@@ -171,52 +171,37 @@ async function save(filename,blob){
 const blobOf=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
 const escSvg=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 function svgOf(c){
-  if(!c.cv) throw new Error('Sticker has not finished rendering yet.');
-  if(!window.ImageTracer || !ImageTracer.imagedataToSVG){
-    throw new Error('SVG vectorizer did not load. Check your internet connection and try again.');
-  }
-  const ctx=c.cv.getContext('2d');
-  const imageData=ctx.getImageData(0,0,c.cv.width,c.cv.height);
-  // ImageTracer does not reliably preserve alpha by itself. Give fully transparent
-  // pixels a reserved key colour, trace the visible artwork, then remove key-colour
-  // paths from the SVG so the exported background remains genuinely transparent.
-  const KEY=[255,0,255];
-  for(let i=0;i<imageData.data.length;i+=4){
-    if(imageData.data[i+3] < 96){
-      imageData.data[i]=KEY[0];
-      imageData.data[i+1]=KEY[1];
-      imageData.data[i+2]=KEY[2];
-      imageData.data[i+3]=255;
-    } else {
-      imageData.data[i+3]=255;
+  // Clean vector SVG using live text geometry and the installed Fredoka font.
+  // No raster image tracing or embedded PNG is used.
+  const txt=cfg.upper?c.name.toUpperCase():c.name.toLowerCase();
+  const size=cfg.size, pal=P[c.pal], sw=size*cfg.stroke/100;
+  const spacing=size*cfg.space/100;
+  mx.font='700 '+size+'px Fredoka, sans-serif';
+  const letters=[]; let cx=0,k=0;
+  for(const ch of txt){
+    const w=mx.measureText(ch).width;
+    if(ch!==' '){
+      const tilt=tiltPattern[k%tiltPattern.length]*cfg.rot;
+      let alt=k%2===1;
+      if(cfg.mode==='rev') alt=!alt;
+      else if(cfg.mode==='main') alt=false;
+      else if(cfg.mode==='rand') alt=mulberry((c.seed+k*997)>>>0)()<.5;
+      letters.push({ch,x:cx+w/2,y:size*1.05,tilt,fill:alt?pal[2]:pal[1]});
+      k++;
     }
+    cx+=w+spacing;
   }
-  let svg=ImageTracer.imagedataToSVG(imageData,{
-    ltres:1,
-    qtres:1,
-    pathomit:2,
-    rightangleenhance:true,
-    colorsampling:0,
-    numberofcolors:32,
-    mincolorratio:0,
-    colorquantcycles:3,
-    scale:1,
-    simplifytolerance:0.25,
-    roundcoords:2,
-    lcpr:0,
-    qcpr:0,
-    desc:false,
-    viewbox:true,
-    blurradius:0,
-    blurdelta:0,
-    strokewidth:0,
-    linefilter:true,
-    layering:0
-  });
-  // Remove vector regions traced from transparent source pixels.
-  svg=svg.replace(/<path\b(?=[^>]*\bfill=["'](?:rgb\(255,0,255\)|#ff00ff|#f0f)["'])[^>]*\/>/gi,'');
-  svg=svg.replace(/<path\b(?=[^>]*\bfill=["']rgb\(255, 0, 255\)["'])[^>]*\/>/gi,'');
-  return new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+  const pad=Math.ceil(sw*1.7+size*.15);
+  const W=Math.max(1,Math.ceil(cx-spacing+pad*2));
+  const H=Math.ceil(size*1.55+pad*2);
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const glyphs=letters.map(l=>{
+    const tr=`translate(${l.x+pad} ${l.y+pad}) rotate(${l.tilt})`;
+    const attrs=`font-family="Fredoka, sans-serif" font-size="${size}" font-weight="700" text-anchor="middle" stroke-linejoin="round"`;
+    // Two strokes underneath the fill form the sticker border and its soft inner separation.
+    return `<text x="0" y="0" transform="${tr}" ${attrs} fill="${l.fill}" stroke="${pal[3]}" stroke-width="${sw*2.6}" paint-order="stroke fill">${esc(l.ch)}</text>`;
+  }).join('');
+  return new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${glyphs}</svg>`],{type:'image/svg+xml;charset=utf-8'});
 }
 const safe=n=>n.replace(/[\\\\/:*?\"<>|]+/g,'').trim()||'sticker';
 
