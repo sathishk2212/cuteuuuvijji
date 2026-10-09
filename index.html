@@ -7,6 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%80%3C/text%3E%3C/svg%3E">
 <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.js"></script>
 <style>
 :root{--ink:#6b4b5a;--cream:#fff7fa;--pink:#ffc5d6;--mint:#f3d9e5;--sky:#f6dce8;--butter:#ffe8ee;--lav:#f2e4f1;
 --bg:var(--cream);--card:#fffafb;--soft:#fff1f5;--pv:#fff0f5;--mut:#9a7786}
@@ -72,7 +73,7 @@ footer .kiss{display:inline-block;color:transparent;-webkit-text-fill-color:tran
 <section id="home" class="home">
 <svg width="84" height="76" viewBox="0 0 84 76" aria-hidden="true"><ellipse cx="42" cy="40" rx="36" ry="32" fill="#ffe7a3" stroke="#4b3a5a" stroke-width="2.5"/><circle cx="29" cy="38" r="4" fill="#4b3a5a"/><circle cx="55" cy="38" r="4" fill="#4b3a5a"/><ellipse cx="21" cy="48" rx="6" ry="4" fill="#ffa6c1"/><ellipse cx="63" cy="48" rx="6" ry="4" fill="#ffa6c1"/><path d="M36 47q6 7 12 0" fill="none" stroke="#4b3a5a" stroke-width="2.5" stroke-linecap="round"/><path d="M30 10q12-10 24 0" fill="none" stroke="#e94f7a" stroke-width="3.5" stroke-linecap="round"/></svg>
 <h1 class="logo" id="logo" aria-label="Name Sticker Maker"></h1>
-<p class="sub">♡ cute little name stickers for the whole class ♡</p>
+<p class="sub">♡ cute little vector name stickers for the whole class ♡</p>
 <div class="pick">
 <button class="pink" style="background:var(--pink)" data-go="single">🎀 Single name<small>one sticker</small></button>
 <button style="background:var(--mint)" data-go="batch">🌸 Batch<small>many names at once</small></button>
@@ -92,7 +93,7 @@ footer .kiss{display:inline-block;color:transparent;-webkit-text-fill-color:tran
 </section>
 
 <section id="batch" hidden>
-<div class="bar"><button class="btn butter" data-go="home">Home</button><h2>Batch</h2><button class="btn mint" id="dall" disabled>Download all</button></div>
+<div class="bar"><button class="btn butter" data-go="home">Home</button><h2>Batch</h2><button class="btn mint" id="dall" disabled>Download all SVGs</button></div>
 <div class="box">
 <textarea id="bnames" placeholder="aadhya, sreehan, kabir:b, meera:g" aria-label="Names"></textarea>
 <p class="hint">Separate names with commas or new lines, e.g. <b>aadhya, sreehan</b>. Add <b>:g</b> or <b>:b</b> for a girl or boy palette, e.g. <b>aadhya:g, kabir:b</b>. Untagged names cycle through all 7 palettes.</p>
@@ -168,11 +169,45 @@ async function save(filename,blob){
  try{const d=window.claude&&await claude.use('downloads');if(d){await d.save({filename,data:blob});return}}catch(e){if(e&&e.code==='declined')return}
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 const blobOf=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
-const safe=n=>n.replace(/[\\/:*?"<>|]+/g,'').trim()||'sticker';
+const escSvg=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+function svgOf(c){
+  if(!c.cv) throw new Error('Sticker has not finished rendering yet.');
+  if(!window.ImageTracer || !ImageTracer.imagedataToSVG){
+    throw new Error('SVG vectorizer did not load. Check your internet connection and try again.');
+  }
+  const ctx=c.cv.getContext('2d');
+  const imageData=ctx.getImageData(0,0,c.cv.width,c.cv.height);
+  // Trace the already-rendered sticker, including its outline and alternating fills,
+  // into genuine SVG path geometry with a transparent background.
+  const svg=ImageTracer.imagedataToSVG(imageData,{
+    ltres:1,
+    qtres:1,
+    pathomit:2,
+    rightangleenhance:true,
+    colorsampling:0,
+    numberofcolors:16,
+    mincolorratio:0,
+    colorquantcycles:3,
+    scale:1,
+    simplifytolerance:0.35,
+    roundcoords:2,
+    lcpr:0,
+    qcpr:0,
+    desc:false,
+    viewbox:true,
+    blurradius:0,
+    blurdelta:0,
+    strokewidth:0,
+    linefilter:true,
+    layering:0
+  });
+  return new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+}
+const safe=n=>n.replace(/[\\\\/:*?\"<>|]+/g,'').trim()||'sticker';
 
 function mkCard(c){
  const el=document.createElement('article');el.className='card';
- el.innerHTML='<div class="pv">Drawing…</div><h3></h3><div class="sw"></div><div class="row"><button class="btn re">🎲 Reroll</button><button class="btn mint dl">Download</button></div>';
+ el.innerHTML='<div class="pv">Drawing…</div><h3></h3><div class="sw"></div><div class="row"><button class="btn re">🎲 Reroll</button><button class="btn mint dl">Download SVG</button></div>';
  el.querySelector('h3').textContent=c.name;c.pv=el.querySelector('.pv');
  const sw=el.querySelector('.sw');
  const dots=P.map((p,i)=>{const b=document.createElement('button');b.className='dot';b.title=p[0];b.setAttribute('aria-label',p[0]+' palette');
@@ -180,7 +215,7 @@ function mkCard(c){
   b.onclick=()=>{c.pal=i;mark();draw(c)};sw.append(b);return b});
  const mark=()=>dots.forEach((b,i)=>b.setAttribute('aria-pressed',i===c.pal));mark();
  el.querySelector('.re').onclick=()=>{c.seed=Math.random()*1e9|0;draw(c)};
- el.querySelector('.dl').onclick=async()=>{if(!c.cv)return;await save(c.file,await blobOf(c.cv))};
+ el.querySelector('.dl').onclick=async()=>{if(!c.cv)return;await save(c.file.replace(/\.png$/i,'.svg'),svgOf(c))};
  c.el=el;return el}
 
 function parse(t){return t.split(/[,\n;]+/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*?)\s*:\s*([gb])$/i);return m?{name:m[1].trim(),g:m[2].toLowerCase()}:{name:s,g:null}}).filter(o=>o.name)}
@@ -194,7 +229,7 @@ async function build(kind,items,grid){
   if(kind==='batch'&&p===prev)p=pick();
   prev=p;
   const base=safe(o.name),n=used[base.toLowerCase()]=(used[base.toLowerCase()]||0)+1;
-  const c={name:o.name,pal:p,seed:hash(o.name)+i*131,file:base+(n>1?'-'+n:'')+'.png',ver:-1};
+  const c={name:o.name,pal:p,seed:hash(o.name)+i*131,file:base+(n>1?'-'+n:'')+'.svg',ver:-1};
   lists[kind].push(c);grid.append(mkCard(c))});
  let n=0;const my=++run;
  for(const c of lists[kind]){if(my!==run)return;await draw(c);n++;if(kind==='batch')$('#bcount').textContent=n+' of '+items.length+' ready'}
@@ -214,10 +249,10 @@ $('#bgo').onclick=()=>{let items=parse($('#bnames').value);if(!items.length){toa
 $('#dall').onclick=async()=>{
  if(!window.JSZip){toast('Zip tool did not load. Check your connection.',3500);return}
  const list=lists.batch.filter(c=>c.cv);if(!list.length)return;
- toast('Zipping '+list.length+' stickers…',6000);
- const z=new JSZip();for(const c of list)z.file(c.file,await blobOf(c.cv));
+ toast('Zipping '+list.length+' SVGs…',6000);
+ const z=new JSZip();for(const c of list)z.file(c.file.replace(/\.png$/i,'.svg'),svgOf(c));
  const blob=await z.generateAsync({type:'blob'});
- await save('name-stickers.zip',blob);toast('Zip ready')};
+ await save('name-stickers-svg.zip',blob);toast('SVG ZIP ready')};
 
 /* style panel (one panel, moved to whichever page is open) */
 const panel=document.createElement('div');panel.className='box panel';
